@@ -82,10 +82,8 @@ The final RAG pipeline combines retrieval with a Generative AI model to answer u
 * **Prompt Building (`build_prompt`):** Another custom `RunnableLambda` function `build_prompt` dynamically constructs a multi-modal prompt for the LLM.
     * It combines the retrieved text context into a single string.
     * It appends `{"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image}"}}` messages for each retrieved image. This is the format required by multi-modal models like `gpt-4o-mini` to "see" the images.
-* **Response Generation (Final LLM):**
-    * The `ChatGroq(model="meta-llama/llama-4-maverick-17b-128e-instruct", temperature=0.1)` model is used here.
-    * **Important Consideration:** While `gpt-4o-mini` (as discussed previously) is ideal for directly processing the `image_url` types in the prompt, Groq's current Llama models are typically text-only. If `meta-llama/llama-4-maverick-17b-128e-instruct` is a text-only model, it will **not** be able to "see" or reason about the images provided via `image_url`. To make this multi-modal, you would need an image-capable model (like OpenAI's GPT-4o-mini/GPT-4-Vision or Google's Gemini Pro Vision) for this final step, or implement an image-to-text conversion for all images before passing them to a text-only LLM.
-    * `StrOutputParser()`: Converts the LLM's response into a simple string.
+
+* **`StrOutputParser()`:** Converts the LLM's response into a simple string.
 * **Chain Execution:** The `chain.invoke()` method runs the entire pipeline, retrieving relevant context and generating an answer.
 * **`chain_with_sources`:** This variant allows you to not only get the final response but also inspect the `context` (retrieved text and images) that was sent to the LLM, which is invaluable for debugging and understanding the RAG process.
 
