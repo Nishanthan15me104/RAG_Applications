@@ -1,4 +1,3 @@
-<<<<<<< HEAD
      
 # Multi-Modal RAG with LangChain (PDF Q&A)
 
@@ -135,6 +134,3 @@ Page number:  2
 ![moving_Average](Transformer_model_architecture.jpeg)
 
 
-=======
-This folder contains list of RAG_Application / models built
->>>>>>> 9330e897944327bda490ab4c3146e41109204aa6
