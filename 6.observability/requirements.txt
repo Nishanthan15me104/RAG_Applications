@@ -1,0 +1,12 @@
+
+langchain_groq
+langchain
+groq
+faiss-cpu
+comet_ml
+ragas
+datasets
+fastapi
+uvicorn
+sentence-transformers
+streamlit

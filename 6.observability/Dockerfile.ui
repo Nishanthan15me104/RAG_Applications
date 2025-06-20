@@ -1,0 +1,13 @@
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Copy the requirements file for UI and install packages
+COPY ./requirements.ui.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy your app code into the container
+COPY ./app /app
+
+# Run Streamlit app
+CMD ["streamlit", "run", "streamlit_app.py", "--server.port=8501", "--server.address=0.0.0.0"]
