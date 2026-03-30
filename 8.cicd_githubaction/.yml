@@ -1,0 +1,140 @@
+# -------------------------------
+# WORKFLOW NAME (Shown in GitHub UI)
+# -------------------------------
+name: Full CI/CD Pipeline
+
+# -------------------------------
+# PHASE 1 — TRIGGER SETUP
+# -------------------------------
+on:
+  push:                         # Run pipeline when code is pushed
+    branches: [ main ]          # Only for main branch
+  pull_request:                 # Run when PR is created/updated
+    branches: [ main ]
+  workflow_dispatch:            # Allow manual trigger from UI
+
+# -------------------------------
+# PHASE 11 — MULTIPLE JOBS (SCALING)
+# -------------------------------
+jobs:
+
+  # -------------------------------
+  # BUILD + TEST JOB (CI)
+  # -------------------------------
+  build-and-test:
+    runs-on: ubuntu-latest      # PHASE 2 — Runner (GitHub machine)
+
+    # -------------------------------
+    # PHASE 9 — SECRETS (ENV VARIABLES)
+    # -------------------------------
+    env:
+      API_KEY: ${{ secrets.API_KEY }}   # Secure secret from GitHub
+
+    steps:
+
+      # -------------------------------
+      # PHASE 2 — CODE CHECKOUT
+      # -------------------------------
+      - name: Checkout Code
+        uses: actions/checkout@v4       # Pull repo into runner
+
+      # -------------------------------
+      # PHASE 3 — ENVIRONMENT SETUP
+      # -------------------------------
+      - name: Set up Python
+        uses: actions/setup-python@v5   # Install Python
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: |
+          pip install --upgrade pip     # Upgrade pip
+          pip install -r requirements.txt  # Install project libs
+
+      # -------------------------------
+      # PHASE 4 — TESTING (CI CORE)
+      # -------------------------------
+      - name: Run Unit Tests
+        run: pytest                     # Run test cases
+
+      # -------------------------------
+      # PHASE 5 — DOCKER BUILD
+      # -------------------------------
+      - name: Build Docker Image
+        run: docker build -t my-app .   # Build Docker image
+
+      # -------------------------------
+      # PHASE 8 — ARTIFACT STORAGE
+      # -------------------------------
+      - name: Save Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-files               # Artifact name
+          path: .                       # Files to store
+
+  # -------------------------------
+  # PHASE 6 — PUSH TO REGISTRY
+  # -------------------------------
+  push-image:
+    needs: build-and-test              # Run only if build succeeds
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Login to Azure (Registry)
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # Tag + Push Image
+      - name: Push Docker Image
+        run: |
+          docker build -t my-app .
+          docker tag my-app myregistry.azurecr.io/my-app:latest
+          docker push myregistry.azurecr.io/my-app:latest
+
+  # -------------------------------
+  # PHASE 7 — DEPLOYMENT (CD)
+  # -------------------------------
+  deploy:
+    needs: push-image                 # Run only after image push
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Azure Web App Deployment
+      - name: Deploy to Azure
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: "my-app"          # Azure app name
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+
+      # -------------------------------
+      # PHASE 12 — HEALTH CHECK
+      # -------------------------------
+      - name: Health Check
+        run: |
+          curl -f http://my-app.azurewebsites.net || exit 1
+
+# -------------------------------
+# PHASE 10 — MULTI ENV (LOGIC EXAMPLE)
+# -------------------------------
+# (Handled via branches)
+# main → production
+# develop → staging
+
+# -------------------------------
+# PHASE 13 — BEST PRACTICES (APPLIED)
+# -------------------------------
+# ✔ Secrets used
+# ✔ Fail fast (needs:)
+# ✔ Dockerized
+# ✔ Separate jobs
+# ✔ Health check added
